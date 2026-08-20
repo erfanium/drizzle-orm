@@ -1,6 +1,6 @@
 {
-	"name": "drizzle-orm",
-	"version": "1.0.0-rc.4",
+	"name": "@erfanium/drizzle-orm",
+	"version": "1.0.0",
 	"description": "Drizzle ORM package for SQL databases",
 	"type": "module",
 	"scripts": {
@@ -22,7 +22,7 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/drizzle-team/drizzle-orm.git"
+		"url": "git+https://github.com/erfanium/drizzle-orm.git"
 	},
 	"homepage": "https://orm.drizzle.team",
 	"keywords": [

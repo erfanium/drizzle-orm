@@ -638,7 +638,14 @@ export class MySqlDialect {
 		onConflict,
 		select,
 		comment,
+		replace,
 	}: MySqlInsertConfig): { sql: SQL; generatedIds: Record<string, unknown>[] } {
+		if (replace && (ignore || onConflict)) {
+			throw new Error(
+				'You cannot use "replace" with "ignore" or "onDuplicateKeyUpdate" - MySQL does not allow the "IGNORE" keyword or the "ON DUPLICATE KEY UPDATE" clause together with the "REPLACE" statement',
+			);
+		}
+
 		// const isSingleValue = values.length === 1;
 		const valuesSqlList: ((SQLChunk | SQL)[] | SQL)[] = [];
 		const columns: Record<string, MySqlColumn> = table[Table.Symbol.Columns];
@@ -716,8 +723,10 @@ export class MySqlDialect {
 			? sql` on duplicate key ${onConflict}`
 			: undefined;
 
+		const replaceSql = replace ? sql`replace into` : sql`insert${ignoreSql} into`;
+
 		return {
-			sql: sql`insert${ignoreSql} into ${table} ${insertOrder} ${valuesSql}${onConflictSql}${
+			sql: sql`${replaceSql} ${table} ${insertOrder} ${valuesSql}${onConflictSql}${
 				comment !== undefined ? sql` ${comment}` : undefined
 			}`,
 			generatedIds: generatedIdsResponse,

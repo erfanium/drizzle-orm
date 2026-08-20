@@ -261,3 +261,45 @@ test.concurrent('build query insert with onDuplicate', async () => {
 		params: ['John', '["foo","bar"]', 'John1'],
 	});
 });
+
+test.concurrent('build query replace', async () => {
+	const users = mysqlTable('users', {
+		id: serial().primaryKey(),
+		name: text().default('Dan'),
+		verified: boolean().default(false),
+		jsonb: jsonb(),
+	});
+
+	const query = db.replace(users)
+		.values({ name: 'John' })
+		.toSQL();
+
+	expect(query).toEqual({
+		sql: 'replace into `users` (`id`, `name`, `verified`, `jsonb`) values (default, ?, default, default)',
+		params: ['John'],
+	});
+});
+
+test.concurrent('replace throws when combined with onDuplicateKeyUpdate', async () => {
+	const users = mysqlTable('users', {
+		id: serial().primaryKey(),
+		name: text().default('Dan'),
+	});
+
+	expect(() => {
+		db.replace(users)
+			.values({ name: 'John' })
+			.onDuplicateKeyUpdate({ set: { name: 'John1' } });
+	}).toThrowError(/You cannot use "onDuplicateKeyUpdate" with "replace"/);
+});
+
+test.concurrent('replace throws when combined with ignore', async () => {
+	const users = mysqlTable('users', {
+		id: serial().primaryKey(),
+		name: text().default('Dan'),
+	});
+
+	expect(() => {
+		db.replace(users).ignore();
+	}).toThrowError(/You cannot use "ignore" with "replace"/);
+});

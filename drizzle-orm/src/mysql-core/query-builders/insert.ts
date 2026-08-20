@@ -22,6 +22,7 @@ export interface MySqlInsertConfig<TTable extends MySqlTable = MySqlTable> {
 	returning?: SelectedFieldsOrdered;
 	select?: boolean;
 	comment?: SQL;
+	replace?: boolean;
 }
 
 export type AnyMySqlInsertConfig = MySqlInsertConfig<MySqlTable>;
@@ -71,6 +72,7 @@ export interface MySqlInsertBuilderConstructor {
 		session: MySqlSession,
 		dialect: MySqlDialect,
 		select?: boolean,
+		replace?: boolean,
 	): AnyMySqlInsert;
 }
 
@@ -88,9 +90,15 @@ export class MySqlInsertBuilder<
 		private session: MySqlSession,
 		private dialect: MySqlDialect,
 		private builder: MySqlInsertBuilderConstructor = MySqlInsertBase as unknown as MySqlInsertBuilderConstructor,
+		private replace = false,
 	) {}
 
 	ignore(): this {
+		if (this.replace) {
+			throw new Error(
+				'You cannot use "ignore" with "replace" - MySQL does not allow the "IGNORE" keyword together with the "REPLACE" statement',
+			);
+		}
 		this.shouldIgnore = true;
 		return this;
 	}
@@ -114,7 +122,15 @@ export class MySqlInsertBuilder<
 			return result;
 		});
 
-		return new this.builder(this.table, mappedValues, this.shouldIgnore, this.session, this.dialect) as any;
+		return new this.builder(
+			this.table,
+			mappedValues,
+			this.shouldIgnore,
+			this.session,
+			this.dialect,
+			undefined,
+			this.replace,
+		) as any;
 	}
 
 	select<TSelection extends MySqlInsertSelection<TTable>>(
@@ -149,7 +165,15 @@ export class MySqlInsertBuilder<
 			}
 		}
 
-		return new this.builder(this.table, select, this.shouldIgnore, this.session, this.dialect, true) as any;
+		return new this.builder(
+			this.table,
+			select,
+			this.shouldIgnore,
+			this.session,
+			this.dialect,
+			true,
+			this.replace,
+		) as any;
 	}
 }
 
@@ -294,8 +318,9 @@ export class MySqlInsertBase<
 		protected session: MySqlSession,
 		protected dialect: MySqlDialect,
 		select?: boolean,
+		replace?: boolean,
 	) {
-		this.config = { table, values: values as any, select, ignore };
+		this.config = { table, values: values as any, select, ignore, replace };
 	}
 
 	/**
@@ -327,6 +352,12 @@ export class MySqlInsertBase<
 	onDuplicateKeyUpdate(
 		config: MySqlInsertOnDuplicateKeyUpdateConfig<this>,
 	): MySqlInsertWithout<this, TDynamic, 'onDuplicateKeyUpdate'> {
+		if (this.config.replace) {
+			throw new Error(
+				'You cannot use "onDuplicateKeyUpdate" with "replace" - MySQL does not allow the "ON DUPLICATE KEY UPDATE" clause together with the "REPLACE" statement',
+			);
+		}
+
 		const setSql = this.dialect.buildUpdateSet(this.config.table, mapUpdateSet(this.config.table, config.set));
 		this.config.onConflict = sql`update ${setSql}`;
 		return this as any;

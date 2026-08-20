@@ -500,6 +500,54 @@ test.concurrent('insert with onDuplicate', async ({ db, push }) => {
 	expect(res).toEqual([{ id: 1, name: 'John1' }]);
 });
 
+test.concurrent('replace with values', async ({ db, push }) => {
+	const users = mysqlTable('users_replace_test_258', {
+		id: serial('id').primaryKey(),
+		name: text('name').notNull(),
+		verified: boolean('verified').notNull().default(false),
+		jsonb: json('jsonb').$type<string[]>(),
+		createdAt: timestamp('created_at', { fsp: 2 }).notNull().defaultNow(),
+	});
+
+	await push({ users });
+	await db.insert(users)
+		.values({ name: 'John' });
+
+	await db.replace(users)
+		.values({ id: 1, name: 'John1' });
+
+	const res = await db.select({ id: users.id, name: users.name }).from(users).where(
+		eq(users.id, 1),
+	);
+
+	expect(res).toEqual([{ id: 1, name: 'John1' }]);
+});
+
+test.concurrent('replace resets omitted columns to their default values', async ({ db, push }) => {
+	const users = mysqlTable('users_replace_reset_259', {
+		id: serial('id').primaryKey(),
+		name: text('name').notNull(),
+		verified: boolean('verified').notNull().default(false),
+		jsonb: json('jsonb').$type<string[]>(),
+		createdAt: timestamp('created_at', { fsp: 2 }).notNull().defaultNow(),
+	});
+
+	await push({ users });
+	await db.insert(users)
+		.values({ name: 'John', verified: true });
+
+	// `verified` is not part of the replace values, so it is
+	// reset to its default value instead of being kept
+	await db.replace(users)
+		.values({ id: 1, name: 'John1' });
+
+	const res = await db.select({ id: users.id, name: users.name, verified: users.verified }).from(users).where(
+		eq(users.id, 1),
+	);
+
+	expect(res).toEqual([{ id: 1, name: 'John1', verified: false }]);
+});
+
 test.concurrent('insert conflict', async ({ db, push }) => {
 	const users = mysqlTable('users_conflict_257', {
 		id: serial('id').primaryKey(),
