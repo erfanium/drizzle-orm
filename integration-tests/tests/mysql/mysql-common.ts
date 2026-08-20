@@ -1262,6 +1262,68 @@ export function tests(driver?: string) {
 			expect(res).toEqual([{ id: 1, name: 'John1' }]);
 		});
 
+		test('build query replace', async (ctx) => {
+			const { db } = ctx.mysql;
+
+			const query = db.replace(usersTable).values({ name: 'John' }).toSQL();
+
+			expect(query).toEqual({
+				sql:
+					'replace into `userstest` (`id`, `name`, `verified`, `jsonb`, `created_at`) values (default, ?, default, default, default)',
+				params: ['John'],
+			});
+		});
+
+		test('replace with values', async (ctx) => {
+			const { db } = ctx.mysql;
+
+			await db.insert(usersTable).values({ name: 'John' });
+
+			await db.replace(usersTable).values({ id: 1, name: 'John1' });
+
+			const res = await db
+				.select({ id: usersTable.id, name: usersTable.name })
+				.from(usersTable)
+				.where(eq(usersTable.id, 1));
+
+			expect(res).toEqual([{ id: 1, name: 'John1' }]);
+		});
+
+		test('replace resets omitted columns to their default values', async (ctx) => {
+			const { db } = ctx.mysql;
+
+			await db.insert(usersTable).values({ name: 'John', verified: true });
+
+			// `verified` is not part of the replace values, so it is
+			// reset to its default value instead of being kept
+			await db.replace(usersTable).values({ id: 1, name: 'John1' });
+
+			const res = await db
+				.select({ id: usersTable.id, name: usersTable.name, verified: usersTable.verified })
+				.from(usersTable)
+				.where(eq(usersTable.id, 1));
+
+			expect(res).toEqual([{ id: 1, name: 'John1', verified: false }]);
+		});
+
+		test('replace throws when combined with onDuplicateKeyUpdate', async (ctx) => {
+			const { db } = ctx.mysql;
+
+			expect(() => {
+				db.replace(usersTable)
+					.values({ name: 'John' })
+					.onDuplicateKeyUpdate({ set: { name: 'John1' } });
+			}).toThrowError(/You cannot use "onDuplicateKeyUpdate" with "replace"/);
+		});
+
+		test('replace throws when combined with ignore', async (ctx) => {
+			const { db } = ctx.mysql;
+
+			expect(() => {
+				db.replace(usersTable).ignore();
+			}).toThrowError(/You cannot use "ignore" with "replace"/);
+		});
+
 		test('insert conflict', async (ctx) => {
 			const { db } = ctx.mysql;
 
