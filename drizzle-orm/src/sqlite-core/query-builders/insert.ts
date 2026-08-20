@@ -22,6 +22,7 @@ export interface SQLiteInsertConfig<TTable extends SQLiteTable = SQLiteTable> {
 	onConflict?: SQL[];
 	returning?: SelectedFieldsOrdered;
 	select?: boolean;
+	orReplace?: boolean;
 }
 
 export type SQLiteInsertValue<
@@ -341,6 +342,33 @@ export class SQLiteInsertBase<
 	}
 
 	/**
+	 * Adds an `or replace` clause to the query.
+	 *
+	 * This is a SQLite-only feature. Calling this method will delete any existing
+	 * rows that conflict with the row proposed for insertion and insert the new
+	 * row in their place. Unlike `onConflictDoUpdate`, the row is fully replaced:
+	 * columns that are not present in the insert values are reset to their default
+	 * values.
+	 *
+	 * @example
+	 * ```ts
+	 * // Replace the row if there's a conflict
+	 * await db.insert(cars)
+	 *   .values({ id: 1, brand: 'BMW' })
+	 *   .orReplace();
+	 * ```
+	 */
+	orReplace(): this {
+		if (this.config.onConflict && this.config.onConflict.length > 0) {
+			throw new Error(
+				'You cannot use "orReplace" with "onConflictDoNothing" or "onConflictDoUpdate" - SQLite does not allow the "ON CONFLICT" clause together with the "REPLACE" conflict resolution algorithm',
+			);
+		}
+		this.config.orReplace = true;
+		return this;
+	}
+
+	/**
 	 * Adds an `on conflict do nothing` clause to the query.
 	 *
 	 * Calling this method simply avoids inserting a row as its alternative action.
@@ -363,6 +391,12 @@ export class SQLiteInsertBase<
 	 * ```
 	 */
 	onConflictDoNothing(config: { target?: IndexColumn | IndexColumn[]; where?: SQL } = {}): this {
+		if (this.config.orReplace) {
+			throw new Error(
+				'You cannot use "onConflictDoNothing" with "orReplace" - SQLite does not allow the "ON CONFLICT" clause together with the "REPLACE" conflict resolution algorithm',
+			);
+		}
+
 		if (!this.config.onConflict) this.config.onConflict = [];
 
 		if (config.target === undefined) {
@@ -405,6 +439,12 @@ export class SQLiteInsertBase<
 	 * ```
 	 */
 	onConflictDoUpdate(config: SQLiteInsertOnConflictDoUpdateConfig<this>): this {
+		if (this.config.orReplace) {
+			throw new Error(
+				'You cannot use "onConflictDoUpdate" with "orReplace" - SQLite does not allow the "ON CONFLICT" clause together with the "REPLACE" conflict resolution algorithm',
+			);
+		}
+
 		if (config.where && (config.targetWhere || config.setWhere)) {
 			throw new Error(
 				'You cannot use both "where" and "targetWhere"/"setWhere" at the same time - "where" is deprecated, use "targetWhere" or "setWhere" instead.',

@@ -563,6 +563,7 @@ export class SQLiteDialect {
 		returning,
 		withList,
 		select,
+		orReplace,
 	}: SQLiteInsertConfig): SQL {
 		// const isSingleValue = values.length === 1;
 		const valuesSqlList: ((SQLChunk | SQL)[] | SQL)[] = [];
@@ -643,7 +644,11 @@ export class SQLiteDialect {
 		// 	return sql`insert into ${table} default values ${onConflictSql}${returningSql}`;
 		// }
 
-		return sql`${withSql}insert into ${table} ${insertOrder} ${valuesSql}${onConflictSql}${returningSql}`;
+		const insertInto = orReplace
+			? sql`insert or replace into`
+			: sql`insert into`;
+
+		return sql`${withSql}${insertInto} ${table} ${insertOrder} ${valuesSql}${onConflictSql}${returningSql}`;
 	}
 
 	sqlToQuery(sql: SQL, invokeSource?: 'indexes' | undefined): Query {

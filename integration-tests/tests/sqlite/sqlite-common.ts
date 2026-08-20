@@ -2754,6 +2754,67 @@ export function tests(test: Test, exclude: string[] = []) {
 			},
 		);
 
+		test.concurrent('insert with or replace', async ({ db }) => {
+			await db.insert(usersTable).values({ id: 1, name: 'John' }).run();
+
+			await db
+				.insert(usersTable)
+				.values({ id: 1, name: 'John1' })
+				.orReplace()
+				.run();
+
+			const res = await db
+				.select({ id: usersTable.id, name: usersTable.name })
+				.from(usersTable)
+				.where(eq(usersTable.id, 1))
+				.all();
+
+			expect(res).toEqual([{ id: 1, name: 'John1' }]);
+		});
+
+		test.concurrent(
+			'insert with or replace replaces the whole row',
+			async ({ db }) => {
+				await db
+					.insert(usersTable)
+					.values({ id: 1, name: 'John', verified: true })
+					.run();
+
+				// `verified` is not part of the replace values, so it is
+				// reset to its default value instead of being kept
+				await db
+					.insert(usersTable)
+					.values({ id: 1, name: 'John1' })
+					.orReplace()
+					.run();
+
+				const res = await db
+					.select({
+						id: usersTable.id,
+						name: usersTable.name,
+						verified: usersTable.verified,
+					})
+					.from(usersTable)
+					.where(eq(usersTable.id, 1))
+					.all();
+
+				expect(res).toEqual([{ id: 1, name: 'John1', verified: false }]);
+			},
+		);
+
+		test.concurrent('insert with or replace and returning', async ({ db }) => {
+			await db.insert(usersTable).values({ id: 1, name: 'John' }).run();
+
+			const res = await db
+				.insert(usersTable)
+				.values({ id: 1, name: 'John1' })
+				.orReplace()
+				.returning({ id: usersTable.id, name: usersTable.name })
+				.all();
+
+			expect(res).toEqual([{ id: 1, name: 'John1' }]);
+		});
+
 		test.concurrent('insert with onConflict do update', async ({ db }) => {
 			await db.insert(usersTable).values({ id: 1, name: 'John' }).run();
 
