@@ -15,6 +15,23 @@
 > with community-suggested features applied on top of the upstream codebase. Every change
 > here corresponds to an open (or accepted) upstream issue.
 
+## Published package
+
+This fork is published to npm as **`@erfanium/drizzle-orm`**:
+
+```sh
+npm install @erfanium/drizzle-orm
+```
+
+### Version mapping
+
+Every `@erfanium/drizzle-orm` release is based on a specific upstream
+`drizzle-orm` version. Keep this table updated when releasing.
+
+| @erfanium/drizzle-orm | Based on upstream                                                        | Upstream commit |
+| --------------------- | ------------------------------------------------------------------------ | --------------- |
+| 0.1.0                 | [drizzle-orm@0.45.3](https://www.npmjs.com/package/drizzle-orm/v/0.45.3) | `b7862528`      |
+
 ## Applied changes
 
 - **SQLite: `INSERT OR REPLACE` support** — `.orReplace()` on the insert builder,
