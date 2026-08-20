@@ -32,6 +32,7 @@ export interface MySqlInsertConfig<TTable extends MySqlTable = MySqlTable> {
 	onConflict?: SQL;
 	returning?: SelectedFieldsOrdered;
 	select?: boolean;
+	replace?: boolean;
 }
 
 export type AnyMySqlInsertConfig = MySqlInsertConfig<MySqlTable>;
@@ -59,9 +60,15 @@ export class MySqlInsertBuilder<
 		private table: TTable,
 		private session: MySqlSession,
 		private dialect: MySqlDialect,
+		private replace = false,
 	) {}
 
 	ignore(): this {
+		if (this.replace) {
+			throw new Error(
+				'You cannot use "ignore" with "replace" - MySQL does not allow the "IGNORE" keyword together with the "REPLACE" statement',
+			);
+		}
 		this.shouldIgnore = true;
 		return this;
 	}
@@ -85,7 +92,15 @@ export class MySqlInsertBuilder<
 			return result;
 		});
 
-		return new MySqlInsertBase(this.table, mappedValues, this.shouldIgnore, this.session, this.dialect);
+		return new MySqlInsertBase(
+			this.table,
+			mappedValues,
+			this.shouldIgnore,
+			this.session,
+			this.dialect,
+			undefined,
+			this.replace,
+		);
 	}
 
 	select(
@@ -111,7 +126,7 @@ export class MySqlInsertBuilder<
 			);
 		}
 
-		return new MySqlInsertBase(this.table, select, this.shouldIgnore, this.session, this.dialect, true);
+		return new MySqlInsertBase(this.table, select, this.shouldIgnore, this.session, this.dialect, true, this.replace);
 	}
 }
 
@@ -239,9 +254,10 @@ export class MySqlInsertBase<
 		private session: MySqlSession,
 		private dialect: MySqlDialect,
 		select?: boolean,
+		replace?: boolean,
 	) {
 		super();
-		this.config = { table, values: values as any, select, ignore };
+		this.config = { table, values: values as any, select, ignore, replace };
 	}
 
 	/**
@@ -273,6 +289,12 @@ export class MySqlInsertBase<
 	onDuplicateKeyUpdate(
 		config: MySqlInsertOnDuplicateKeyUpdateConfig<this>,
 	): MySqlInsertWithout<this, TDynamic, 'onDuplicateKeyUpdate'> {
+		if (this.config.replace) {
+			throw new Error(
+				'You cannot use "onDuplicateKeyUpdate" with "replace" - MySQL does not allow the "ON DUPLICATE KEY UPDATE" clause together with the "REPLACE" statement',
+			);
+		}
+
 		const setSql = this.dialect.buildUpdateSet(this.config.table, mapUpdateSet(this.config.table, config.set));
 		this.config.onConflict = sql`update ${setSql}`;
 		return this as any;

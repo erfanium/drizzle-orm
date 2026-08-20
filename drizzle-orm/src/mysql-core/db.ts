@@ -449,6 +449,33 @@ export class MySqlDatabase<
 	}
 
 	/**
+	 * Creates a replace query.
+	 *
+	 * Calling this method will create a `REPLACE INTO` statement. MySQL will insert the row if
+	 * it does not exist, or delete the existing row and insert the new one if it conflicts with
+	 * a primary key or unique index. Unlike `INSERT ... ON DUPLICATE KEY UPDATE`, the existing
+	 * row is fully replaced: columns that are not present in the values are reset to their
+	 * default values.
+	 *
+	 * See docs: {@link https://dev.mysql.com/doc/refman/8.4/en/replace.html}
+	 *
+	 * @param table The table to replace into.
+	 *
+	 * @example
+	 *
+	 * ```ts
+	 * // Replace one row
+	 * await db.replace(cars).values({ id: 1, brand: 'BMW' });
+	 *
+	 * // Replace multiple rows
+	 * await db.replace(cars).values([{ id: 1, brand: 'BMW' }, { id: 2, brand: 'Porsche' }]);
+	 * ```
+	 */
+	replace<TTable extends MySqlTable>(table: TTable): MySqlInsertBuilder<TTable, TQueryResult, TPreparedQueryHKT> {
+		return new MySqlInsertBuilder(table, this.session, this.dialect, true);
+	}
+
+	/**
 	 * Creates a delete query.
 	 *
 	 * Calling this method without `.where()` clause will delete all rows in a table. The `.where()` clause specifies which rows should be deleted.
@@ -513,6 +540,7 @@ export const withReplicas = <
 
 	const update: Q['update'] = (...args: [any]) => primary.update(...args);
 	const insert: Q['insert'] = (...args: [any]) => primary.insert(...args);
+	const replace: Q['replace'] = (...args: [any]) => primary.replace(...args);
 	const $delete: Q['delete'] = (...args: [any]) => primary.delete(...args);
 	const execute: Q['execute'] = (...args: [any]) => primary.execute(...args);
 	const transaction: Q['transaction'] = (...args: [any, any]) => primary.transaction(...args);
@@ -521,6 +549,7 @@ export const withReplicas = <
 		...primary,
 		update,
 		insert,
+		replace,
 		delete: $delete,
 		execute,
 		transaction,
