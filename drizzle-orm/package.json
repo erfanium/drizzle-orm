@@ -1,6 +1,6 @@
 {
 	"name": "@erfanium/drizzle-orm",
-	"version": "1.0.0",
+	"version": "1.0.1",
 	"description": "Drizzle ORM package for SQL databases",
 	"type": "module",
 	"scripts": {

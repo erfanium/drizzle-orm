@@ -1,5 +1,6 @@
 import * as Schema from 'effect/Schema';
 import { entityKind } from '~/entity.ts';
+import { formatQueryParams } from '~/errors.ts';
 
 export class EffectDrizzleError extends Schema.TaggedErrorClass<EffectDrizzleError>()('EffectDrizzleError', {
 	message: Schema.String,
@@ -18,7 +19,7 @@ export class EffectDrizzleQueryError
 	static readonly [entityKind]: string = 'EffectDrizzleQueryError';
 
 	override get message() {
-		return `Failed query: ${this.query}\nparams: ${this.params}`;
+		return `Failed query: ${this.query}\nparams: ${formatQueryParams(this.params)}`;
 	}
 
 	constructor(params: Omit<Schema.Struct.MakeIn<typeof EffectDrizzleQueryError.fields>, '_tag'>) {

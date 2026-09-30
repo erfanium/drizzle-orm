@@ -35,6 +35,7 @@ Every `@erfanium/drizzle-orm` release is based on a specific upstream
 | @erfanium/drizzle-orm | Based on upstream                                                                   | Upstream commit |
 | --------------------- | ----------------------------------------------------------------------------------- | --------------- |
 | 1.0.0                 | [v1.0.0-rc.4](https://github.com/drizzle-team/drizzle-orm/releases/tag/v1.0.0-rc.4) | `748058e8`      |
+| 1.0.1                 | [v1.0.0-rc.4](https://github.com/drizzle-team/drizzle-orm/releases/tag/v1.0.0-rc.4) | `748058e8`      |
 
 ## Applied changes
 
@@ -42,6 +43,10 @@ Every `@erfanium/drizzle-orm` release is based on a specific upstream
   emitting `INSERT OR REPLACE INTO` ([upstream issue #4236](https://github.com/drizzle-team/drizzle-orm/issues/4236))
 - **MySQL: `REPLACE INTO` support** — `db.replace(table).values(...)`,
   emitting `REPLACE INTO` ([upstream issue #4623](https://github.com/drizzle-team/drizzle-orm/issues/4623))
+- **Readable binary params in query errors** — `DrizzleQueryError` messages render
+  `Buffer` / `Uint8Array` / `ArrayBuffer` params as `0x`-prefixed hex instead of raw
+  bytes, truncated after 32 bytes with the total length (e.g. `0xabab...(40 bytes)`).
+  `error.params` still holds the original values. *(since 1.0.1)*
 
 <br/>
 <div align="center">
