@@ -15,6 +15,10 @@
 > with community-suggested features applied on top of the upstream codebase. Every change
 > here corresponds to an open (or accepted) upstream issue.
 
+> **Supported upstream versions:** this fork tracks the upstream **1.x** line only,
+> including release candidates such as `1.0.0-rc.x`. The upstream **0.x** line is no
+> longer supported.
+
 ## Published package
 
 This fork is published to npm as **`@erfanium/drizzle-orm`**:
@@ -26,7 +30,7 @@ npm install @erfanium/drizzle-orm
 ### Version mapping
 
 Every `@erfanium/drizzle-orm` release is based on a specific upstream
-`drizzle-orm` version. Keep this table updated when releasing.
+`drizzle-orm` 1.x version. Keep this table updated when releasing.
 
 | @erfanium/drizzle-orm | Based on upstream                                                                   | Upstream commit |
 | --------------------- | ----------------------------------------------------------------------------------- | --------------- |
